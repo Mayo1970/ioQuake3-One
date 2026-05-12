@@ -1,0 +1,190 @@
+diff --git a/include/SDL_config_winrt.h b/include/SDL_config_winrt.h
+index 2d38d37..22d59ca 100644
+--- a/include/SDL_config_winrt.h
++++ b/include/SDL_config_winrt.h
+@@ -200,9 +200,9 @@
+ #define SDL_VIDEO_DRIVER_WINRT 1
+ //#define SDL_VIDEO_DRIVER_DUMMY  1
+ 
+-/* Enable OpenGL ES 2.0 (via a modified ANGLE library) */
+-//#define SDL_VIDEO_OPENGL_ES2 0
+-//#define SDL_VIDEO_OPENGL_EGL 0
++/* OpenGL ES 2.0 via ANGLE (libEGL + libGLESv2); desktop WGL doesn't exist on UWP. */
++#define SDL_VIDEO_OPENGL_ES2 1
++#define SDL_VIDEO_OPENGL_EGL 1
+ 
+ /* Enable appropriate renderer(s) */
+ //#define SDL_VIDEO_RENDER_D3D11 0
+@@ -210,11 +210,8 @@
+ /* Disable D3D12 as it's not implemented for WinRT */
+ //#define SDL_VIDEO_RENDER_D3D12  0
+ 
+-#define SDL_VIDEO_OPENGL 1
+-#define SDL_VIDEO_RENDER_OGL 1
+-#define SDL_VIDEO_OPENGL_WGL 1
++#define SDL_VIDEO_RENDER_OGL_ES2 1
+ 
+-#define __XBOXSERIES__ 1
+ #define SDL_VIDEO_DRIVER_KEYBOARD_WINRT 1
+ #define SDL_VIDEO_DRIVER_POINTER_WINRT 1
+ 
+diff --git a/src/core/winrt/SDL_winrtapp_direct3d.cpp b/src/core/winrt/SDL_winrtapp_direct3d.cpp
+index e3f5515..f58c08e 100644
+--- a/src/core/winrt/SDL_winrtapp_direct3d.cpp
++++ b/src/core/winrt/SDL_winrtapp_direct3d.cpp
+@@ -77,6 +77,9 @@ extern "C" void D3D11_Trim(SDL_Renderer *);
+ // #define LOG_WINDOW_EVENTS 1
+ // #define LOG_ORIENTATION_EVENTS 1
+ 
++// Breadcrumb hook (no-op; was used during boot debugging).
++#define IOQ3_SDLBC(tag) ((void)0)
++
+ // HACK, DLudwig: record a reference to the global, WinRT 'app'/view.
+ // SDL/WinRT will use this throughout its code.
+ //
+@@ -173,6 +176,7 @@ SDL_WinRTApp::SDL_WinRTApp() : m_windowClosed(false),
+ 
+ void SDL_WinRTApp::Initialize(CoreApplicationView ^ applicationView)
+ {
++    IOQ3_SDLBC(L"10_initialize_entry");
+     applicationView->Activated +=
+         ref new TypedEventHandler<CoreApplicationView ^, IActivatedEventArgs ^>(this, &SDL_WinRTApp::OnAppActivated);
+ 
+@@ -195,6 +199,7 @@ void SDL_WinRTApp::Initialize(CoreApplicationView ^ applicationView)
+         ref new Windows::Foundation::EventHandler<Windows::Gaming::Input::Gamepad ^>(
+             this, &SDL_WinRTApp::OnGamepadAdded);
+ #endif
++    IOQ3_SDLBC(L"11_initialize_exit");
+ }
+ 
+ #if NTDDI_VERSION > NTDDI_WIN8
+@@ -250,6 +255,7 @@ void SDL_WinRTApp::OnOrientationChanged(Object ^ sender)
+ 
+ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+ {
++    IOQ3_SDLBC(L"20_setwindow_entry");
+ #if LOG_WINDOW_EVENTS == 1
+     SDL_Log("%s, current orientation=%d, native orientation=%d, auto rot. pref=%d, window bounds={%f, %f, %f,%f}\n",
+             __FUNCTION__,
+@@ -296,11 +302,13 @@ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+     window->PointerWheelChanged +=
+         ref new TypedEventHandler<CoreWindow ^, PointerEventArgs ^>(this, &SDL_WinRTApp::OnPointerWheelChanged);
+ 
++    IOQ3_SDLBC(L"21_pre_mousedev");
+ #if WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP
+     // Retrieves relative-only mouse movements:
+     Windows::Devices::Input::MouseDevice::GetForCurrentView()->MouseMoved +=
+         ref new TypedEventHandler<MouseDevice ^, MouseEventArgs ^>(this, &SDL_WinRTApp::OnMouseMoved);
+ #endif
++    IOQ3_SDLBC(L"22_post_mousedev");
+ 
+     window->KeyDown +=
+         ref new TypedEventHandler<CoreWindow ^, KeyEventArgs ^>(this, &SDL_WinRTApp::OnKeyDown);
+@@ -311,6 +319,7 @@ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+     window->CharacterReceived +=
+         ref new TypedEventHandler<CoreWindow ^, CharacterReceivedEventArgs ^>(this, &SDL_WinRTApp::OnCharacterReceived);
+ 
++    IOQ3_SDLBC(L"23_pre_sysnav");
+ #if NTDDI_VERSION >= NTDDI_WIN10
+     Windows::UI::Core::SystemNavigationManager::GetForCurrentView()->BackRequested +=
+         ref new EventHandler<BackRequestedEventArgs ^>(this, &SDL_WinRTApp::OnBackButtonPressed);
+@@ -318,6 +327,7 @@ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+     HardwareButtons::BackPressed +=
+         ref new EventHandler<BackPressedEventArgs ^>(this, &SDL_WinRTApp::OnBackButtonPressed);
+ #endif
++    IOQ3_SDLBC(L"24_post_sysnav");
+ 
+ #if NTDDI_VERSION > NTDDI_WIN8
+     DisplayInformation::GetForCurrentView()->OrientationChanged +=
+@@ -326,6 +336,7 @@ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+     DisplayProperties::OrientationChanged +=
+         ref new DisplayPropertiesEventHandler(this, &SDL_WinRTApp::OnOrientationChanged);
+ #endif
++    IOQ3_SDLBC(L"25_post_orient_handler");
+ 
+ #if (WINAPI_FAMILY == WINAPI_FAMILY_APP) && (NTDDI_VERSION < NTDDI_WIN10) // for Windows 8/8.1/RT apps... (and not Phone apps)
+     // Make sure we know when a user has opened the app's settings pane.
+@@ -335,10 +346,12 @@ void SDL_WinRTApp::SetWindow(CoreWindow ^ window)
+     SettingsPane::GetForCurrentView()->CommandsRequested +=
+         ref new TypedEventHandler<SettingsPane ^, SettingsPaneCommandsRequestedEventArgs ^>(this, &SDL_WinRTApp::OnSettingsPaneCommandsRequested);
+ #endif
++    IOQ3_SDLBC(L"29_setwindow_exit");
+ }
+ 
+ void SDL_WinRTApp::Load(Platform::String ^ entryPoint)
+ {
++    IOQ3_SDLBC(L"30_load_entry");
+ }
+ 
+ void SDL_WinRTApp::App_BackRequested(
+@@ -350,6 +363,7 @@ void SDL_WinRTApp::App_BackRequested(
+ 
+ void SDL_WinRTApp::Run()
+ {
++    IOQ3_SDLBC(L"40_run_entry");
+     auto navigation = Windows::UI::Core::SystemNavigationManager::GetForCurrentView();
+     // UWP on Xbox One triggers a back request whenever the B button is
+     // pressed which can result in the app being suspended if unhandled
+@@ -357,9 +371,12 @@ void SDL_WinRTApp::Run()
+         Windows::UI::Core::BackRequestedEventArgs ^>(
+         this, &SDL_WinRTApp::App_BackRequested);
+ 
++    IOQ3_SDLBC(L"41_pre_setmainready");
+     SDL_SetMainReady();
++    IOQ3_SDLBC(L"42_post_setmainready");
+ 
+     if (WINRT_SDLAppEntryPoint) {
++        IOQ3_SDLBC(L"43_pre_entrypoint_dispatch");
+         // TODO, WinRT: pass the C-style main() a reasonably realistic
+         // representation of command line arguments.
+         if (!m_cmd.empty())
+@@ -386,7 +403,14 @@ void SDL_WinRTApp::Run()
+             }
+             argv[0] = SDL_strdup("WinRTApp");
+             argv[1] = NULL;
++            {
++                wchar_t buf[64];
++                _snwprintf_s(buf, 64, _TRUNCATE, L"44_fnptr_%016llx", (unsigned long long)(uintptr_t)WINRT_SDLAppEntryPoint);
++                IOQ3_SDLBC(buf);
++            }
++            IOQ3_SDLBC(L"45_pre_call");
+             WINRT_SDLAppEntryPoint(argc, argv);
++            IOQ3_SDLBC(L"46_post_call");
+             SDL_free(argv[0]);
+             SDL_free(argv);
+         }
+@@ -643,7 +667,9 @@ void SDL_WinRTApp::OnWindowClosed(CoreWindow ^ sender, CoreWindowEventArgs ^ arg
+ 
+ void SDL_WinRTApp::OnAppActivated(CoreApplicationView ^ applicationView, IActivatedEventArgs ^ args)
+ {
++    IOQ3_SDLBC(L"35_appactivated_entry");
+     CoreWindow::GetForCurrentThread()->Activate();
++    IOQ3_SDLBC(L"36_post_corewindow_activate");
+ 
+     if (args->Kind ==
+         Windows::ApplicationModel::Activation::ActivationKind::Protocol) {
+diff --git a/src/video/winrt/SDL_winrtvideo.cpp b/src/video/winrt/SDL_winrtvideo.cpp
+index 72e0c23..3f5bb59 100644
+--- a/src/video/winrt/SDL_winrtvideo.cpp
++++ b/src/video/winrt/SDL_winrtvideo.cpp
+@@ -264,8 +264,8 @@ int WINRT_VideoInit(_THIS)
+     return 0;
+ }
+ 
+-#ifdef SDL_VIDEO_OPENGL_WGL
+-Uint32 D3D11_DXGIFormatToSDLPixelFormat(DXGI_FORMAT dxgiFormat)
++/* Local copy: WGL and D3D11 renderer (the usual providers) are both off. */
++static Uint32 D3D11_DXGIFormatToSDLPixelFormat(DXGI_FORMAT dxgiFormat)
+ {
+     switch (dxgiFormat) {
+     case DXGI_FORMAT_B8G8R8A8_UNORM:
+@@ -276,9 +276,6 @@ Uint32 D3D11_DXGIFormatToSDLPixelFormat(DXGI_FORMAT dxgiFormat)
+         return SDL_PIXELFORMAT_UNKNOWN;
+     }
+ }
+-#else
+-extern "C" Uint32 D3D11_DXGIFormatToSDLPixelFormat(DXGI_FORMAT dxgiFormat);
+-#endif
+ 
+ static void WINRT_DXGIModeToSDLDisplayMode(const DXGI_MODE_DESC *dxgiMode, SDL_DisplayMode *sdlMode)
+ {
