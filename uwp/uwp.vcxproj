@@ -164,7 +164,7 @@
     <ANGLE_INC_DIR>E:\Users\Matteo\Desktop\quake3\ioQ3-One\dev stuff\RetroArch\gfx\include\ANGLE</ANGLE_INC_DIR>
     <ANGLE_BIN_DIR>E:\Users\Matteo\Desktop\quake3\ioQ3-One\dev stuff\RetroArch\pkg\msvc-uwp\RetroArch-msvcUWP\ANGLE\x64</ANGLE_BIN_DIR>
     <SDL_DIR>E:\Users\Matteo\Desktop\quake3\ioQ3-One\SDL-uwp-gl</SDL_DIR>
-    <IOQ3_BUILD_DIR>E:\Users\Matteo\Desktop\quake3\ioQ3-One\ioq3\build\release-mingw64-x86_64\Release</IOQ3_BUILD_DIR>
+    <IOQ3_BUILD_DIR>E:\Users\Matteo\Desktop\quake3\ioQ3-One\ioQ3-One\build\Release</IOQ3_BUILD_DIR>
     <MSYS64_BIN>C:\msys64\mingw64\bin</MSYS64_BIN>
   </PropertyGroup>
 
@@ -262,6 +262,7 @@
         $(ANGLE_BIN_DIR)\libGLESv2.lib;
         $(SDL_DIR)\VisualC-WinRT\x64\Release\SDL-UWP\SDL2.lib;
         $(IOQ3_BUILD_DIR)\libioquake3_msvc.lib;
+        $(ProjectDir)\..\libuwp\x64\Release\libuwp\libuwp.lib;
         d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)
       </AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store\amd64; $(VCInstallDir)\lib\amd64</AdditionalLibraryDirectories>
@@ -273,6 +274,7 @@
         $(ANGLE_INC_DIR);
         $(SDL_DIR)\include;
         $(ProjectDir);
+        $(ProjectDir)\..\libuwp;
         $(IntermediateOutputPath);%(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -296,6 +298,7 @@
         $(ANGLE_BIN_DIR)\libGLESv2.lib;
         $(SDL_DIR)\VisualC-WinRT\x64\Release\SDL-UWP\SDL2.lib;
         $(IOQ3_BUILD_DIR)\libioquake3_msvc.lib;
+        $(ProjectDir)\..\libuwp\x64\Release\libuwp\libuwp.lib;
         d3d11.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)
       </AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store\amd64; $(VCInstallDir)\lib\amd64</AdditionalLibraryDirectories>
@@ -307,6 +310,7 @@
         $(ANGLE_INC_DIR);
         $(SDL_DIR)\include;
         $(ProjectDir);
+        $(ProjectDir)\..\libuwp;
         $(IntermediateOutputPath);%(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -362,42 +366,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\cgame.dll">
-      <TargetPath>baseq3\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\qagame.dll">
-      <TargetPath>baseq3\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\ui.dll">
-      <TargetPath>baseq3\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\vm\cgame.qvm">
-      <TargetPath>baseq3\vm\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\vm\qagame.qvm">
-      <TargetPath>baseq3\vm\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(IOQ3_BUILD_DIR)\baseq3\vm\ui.qvm">
-      <TargetPath>baseq3\vm\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+
 
   <!-- MinGW runtime DLLs -->
   <ItemGroup>

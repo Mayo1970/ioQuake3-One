@@ -1,12 +1,14 @@
 # ============================================================================
 # ioQ3-One — repository ignore rules
 # ============================================================================
-# Keep only what's needed to reproduce a working build:
+# Keep everything needed to reproduce a working build:
 #   - UWP shell source (uwp/, libuwp/)
-#   - Patches against the ioq3 + SDL-uwp-gl trees (patches/)
-#   - Project metadata (sln, README, LICENSE, CLAUDE.md is excluded below)
-# Everything else — retail data, third-party sources, build outputs, signed
-# bundles — is excluded. Built artifacts ship via the GitHub Releases tab.
+#   - ioquake3 engine source + CMake tree (code/, cmake/, CMakeLists.txt)
+#   - Bundled third-party dependency sources & prebuilt link libs
+#     (code/thirdparty/) — REQUIRED by the CMake configure step
+#   - Project metadata (sln, README, LICENSE, data/)
+# Excluded: retail game data, build outputs, signed bundles, IDE/OS junk.
+# Built artifacts ship via the GitHub Releases tab.
 # ============================================================================
 
 # ----------------------------------------------------------------------------
@@ -14,6 +16,7 @@
 # ----------------------------------------------------------------------------
 .claude/
 CLAUDE.md
+AGENTS.md
 memory/
 MEMORY.md
 *.claude.md
@@ -29,6 +32,16 @@ MEMORY.md
 *.pk3
 demoq3/
 missionpack/
+
+# ----------------------------------------------------------------------------
+# Build outputs — CMake / MinGW tree
+# ----------------------------------------------------------------------------
+# The whole out-of-source CMake build dir (49M of generated Makefiles,
+# stringified shaders, QVM intermediates, ExternalProject stamps, artifacts).
+/build/
+**/CMakeCache.txt
+**/CMakeFiles/
+**/cmake_install.cmake
 
 # ----------------------------------------------------------------------------
 # Build outputs — UWP / MSBuild
@@ -59,39 +72,23 @@ Package.StoreAssociation.xml
 _pkginfo.txt
 
 # ----------------------------------------------------------------------------
-# Build outputs — ioq3 MinGW CMake tree
+# Compiled / generated binaries
 # ----------------------------------------------------------------------------
-ioq3/build/
-ioq3/Makefile
-ioq3/CMakeCache.txt
-ioq3/CMakeFiles/
-**/CMakeCache.txt
-**/CMakeFiles/
-**/cmake_install.cmake
+# Blanket-ignore build artifacts, but force-keep the prebuilt third-party
+# link libraries the build links against (these are checked-in dependencies,
+# not build output). See cmake/libraries/sdl.cmake.
 *.def
 *.dll
 *.lib
 *.exp
-*.exe
 *.so
 *.dylib
 *.qvm
+*.a
+!code/thirdparty/libs/**
 
 # ----------------------------------------------------------------------------
-# Third-party trees (cloned/downloaded — not part of this repo)
-# ----------------------------------------------------------------------------
-# The ioq3 engine source is cloned separately and patched via patches/
-ioq3/
-# Series S/X port — read-only reference, not shipped here
-ioq3-uwp/
-# aerisarn's SDL-uwp-gl clone — patched via patches/sdl-uwp-gl.patch
-SDL-uwp-gl/
-# RetroArch ANGLE drop (headers + prebuilt x64 UWP DLLs)
-dev\ stuff/
-dev stuff/
-
-# ----------------------------------------------------------------------------
-# Crash dumps / runtime artifacts
+# Crash dumps / runtime logs
 # ----------------------------------------------------------------------------
 Crash\ dumps/
 Crash dumps/

@@ -9,8 +9,12 @@ for the WinRT platform layer.
 
 - Boots, loads maps, enters gameplay with bots
 - Networking works (LAN discovery, internet server browser, master server)
-- Xbox controller with dual-stick analog input
-- On-screen keyboard for in-game chat
+- Xbox controller with rumble feedback; Controls menu shows real button names
+  (A, B, X, Y, LB, RB, LT, RT, D-pad …) and B works as back in menus
+- In-game sensitivity slider also scales controller look speed
+- Developer console (LB+RB) and in-game chat (L3+A) with Xbox on-screen keyboard
+- OpenAL audio with music streaming
+- Default player name `Q3Xbox` on first boot (Xbox gamertag needs the GDK)
 - 60 fps at 1920x1080
 - ANGLE GLSL ES 1.00 shader path (Xbox One GPU is vs_4_1 / ps_4_1)
 
@@ -18,8 +22,8 @@ for the WinRT platform layer.
 
 | Component | Source | Used as |
 |---|---|---|
-| Engine | [ioquake/ioq3](https://github.com/ioquake/ioq3) | Cloned, patched via `patches/ioq3-uwp.patch` |
-| WinRT SDL2 | [aerisarn/SDL-uwp-gl](https://github.com/aerisarn/SDL-uwp-gl) | Cloned, patched via `patches/sdl-uwp-gl.patch` (ES2/EGL config) |
+| Engine | [ioquake/ioq3](https://github.com/ioquake/ioq3) | Source in `code/`, `cmake/`, `CMakeLists.txt` — no patches needed |
+| WinRT SDL2 | [aerisarn/SDL-uwp-gl](https://github.com/aerisarn/SDL-uwp-gl) | Cloned, modified in-place (`SDL-uwp-gl/`) for ES2/EGL config |
 | GLES → D3D11 | [ANGLE](https://chromium.googlesource.com/angle/angle) | Prebuilt x64 UWP binaries from [RetroArch](https://github.com/libretro/RetroArch) (`pkg/msvc-uwp/RetroArch-msvcUWP/ANGLE/x64/`) |
 | Series S/X reference | [worleydl/ioq3-uwp](https://github.com/worleydl/ioq3-uwp) | Read-only — UWP shell shape, Package.appxmanifest layout |
 
@@ -61,12 +65,13 @@ prefer.
 
 ### 5. Upstream source trees
 
-Clone the two third-party repos as siblings of this repo:
+Clone SDL-uwp-gl and place it as a sibling of this repo. The ioq3 engine
+source is already included in this repo (`code/`, `cmake/`, `CMakeLists.txt`).
+No separate `ioq3\` clone is needed.
 
 ```
 <parent>\
-├── ioQ3-One\        ← this repo
-├── ioq3\            ← git clone https://github.com/ioquake/ioq3
+├── ioQ3-One\        ← this repo (includes engine source + build output)
 └── SDL-uwp-gl\      ← git clone https://github.com/aerisarn/SDL-uwp-gl
 ```
 
@@ -85,23 +90,24 @@ Supply your own from a legal install (Steam:
 
 ## Building
 
-### Step 1 -- Patch ioQ3 + SDL-uwp-gl (run once)
+### Step 1 -- Configure CMake (first time only)
 
 ```bash
-cd ioQ3-One/patches
-bash apply_patches.sh
+/c/msys64/usr/bin/bash.exe -lc "mkdir -p /e/path/to/ioQ3-One/build && \
+  cd /e/path/to/ioQ3-One/build && \
+  cmake /e/path/to/ioQ3-One -G 'MinGW Makefiles' -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_UWP_LIB=ON -DBUILD_SERVER=OFF -DBUILD_CLIENT=ON \
+  -DBUILD_RENDERER_GL1=ON -DBUILD_RENDERER_GL2=ON \
+  -DBUILD_GAME_LIBRARIES=OFF -DBUILD_GAME_QVMS=ON -DIOQ3_UWP_DEBUG_LOGS=OFF"
 ```
 
-This applies `ioq3-uwp.patch` to the ioq3 tree (CMake `BUILD_UWP_LIB` target,
-ANGLE/EGL renderer paths, hardcoded LocalState home path, Xbox controller
-binds, CD-key auto-skip, etc.) and `sdl-uwp-gl.patch` to the SDL-uwp-gl tree
-(SDL_config_winrt.h flipped to ES2/EGL, WGL bits stubbed out). Idempotent —
-safe to re-run.
+The engine source (`code/`, `cmake/`, `CMakeLists.txt`) lives directly in this
+repo — no separate `ioq3\` clone or patching step needed.
 
 ### Step 2 -- Build libioquake3 + renderers (MSYS2)
 
 ```bash
-/c/msys64/usr/bin/bash.exe -lc "cd /e/path/to/ioq3/build/release-mingw64-x86_64 && \
+/c/msys64/usr/bin/bash.exe -lc "cd /e/path/to/ioQ3-One/build && \
   cmake --build . --target libioquake3 renderer_opengl1 renderer_opengl2 -- -j4"
 ```
 
@@ -109,7 +115,7 @@ safe to re-run.
 
 ```powershell
 $lib    = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\lib.exe"
-$outDir = "E:\path\to\ioq3\build\release-mingw64-x86_64\Release"
+$outDir = "E:\path\to\ioQ3-One\build\Release"
 "LIBRARY libioquake3","EXPORTS","    SDL_main" | Out-File "$outDir\libioquake3.def" -Encoding ascii
 & $lib /DEF:"$outDir\libioquake3.def" /OUT:"$outDir\libioquake3_msvc.lib" /MACHINE:X64
 ```
@@ -168,8 +174,7 @@ cmake -DIOQ3_UWP_DEBUG_LOGS=OFF .  # release default (only ioq3_error.log on cra
 
 ## Controls
 
-Xbox controller, dual-stick FPS layout. Buttons are rebindable from the
-in-game options menu.
+Xbox controller. Buttons are rebindable from the in-game options menu.
 
 #### In-game
 
@@ -188,7 +193,8 @@ in-game options menu.
 | **LS click** | Walk / run toggle |
 | **View** (Back) | Scoreboard (hold) |
 | **Menu** (Start) | Toggle menu (Escape) |
-| **D-pad down** | Open chat |
+| **L3 + A** | Open chat (OSK) |
+| **LB + RB** | Open developer console |
 
 #### Menus
 
@@ -197,16 +203,31 @@ in-game options menu.
 | Left stick | Move cursor |
 | D-pad | Arrow keys |
 | **A** | Confirm (Enter) |
-| **B** | Back (Escape) |
+| **B** | Back (Escape) — works in every menu, still rebindable in gameplay |
 | **Menu** | Toggle menu |
+
+> Buttons rebound from the Controls menu display their real Xbox names
+> (A, B, X, Y, LB, RB, LT, RT, D-pad Up/Down/Left/Right), not "PAD0_*".
+> The in-game mouse-sensitivity slider also scales controller look speed.
 
 #### Chat
 
 | Input | Action |
 |---|---|
-| **D-pad down** (in-game) | Open Xbox on-screen keyboard |
+| **L3 + A** (in-game) | Open chat — shows Xbox on-screen keyboard |
 | Type + OSK Enter | Send as `say` chat |
 | **B** | Cancel |
+
+#### Developer console
+
+| Input | Action |
+|---|---|
+| **LB + RB** (anywhere) | Toggle console open / closed; shows OSK automatically |
+| **A** | Show on-screen keyboard to type a command |
+| **B** | Close console |
+| Right stick Y | Scroll line by line |
+| **D-pad Up / Down** | Jump 5 lines |
+| **LB + RB** (in console) | Toggle between top and bottom of buffer |
 
 ---
 
@@ -239,8 +260,11 @@ In a `IOQ3_UWP_DEBUG_LOGS=ON` build the directory also gets:
   is not user-visible.
 - **Shadow maps:** the cascaded sun-shadow path is skipped; `shadowmask_fp`
   hardcodes `sampler2DShadow` which ANGLE rejects under GLSL ES 1.00.
-- **Audio:** SDL/WASAPI playback. VoIP capture is disabled (would block
-  on a microphone privacy prompt that never arrives).
+- **Audio:** OpenAL (`libopenal-1.dll` — the MSYS2/MinGW name; the stock
+  `_WIN64` default `OpenAL64.dll` doesn't match the bundled DLL, so an
+  `IOQ3_UWP` branch in `snd_openal.c` fixes it). This is the path that gives
+  music streaming; the SDL DMA fallback has none. VoIP capture is disabled
+  (would block on a microphone privacy prompt that never arrives).
 - **Networking:** SDL_net via `ws2_32`. LAN, internet browser, and direct
   IP connect all work.
 - **UWP shell timeout:** the runtime kills any app that doesn't pump the

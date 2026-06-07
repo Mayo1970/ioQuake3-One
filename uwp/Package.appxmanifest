@@ -53,6 +53,7 @@
     <Capability Name="codeGeneration"/>
     <Capability Name="internetClientServer"/>
     <Capability Name="privateNetworkClientServer"/>
+    <uap:Capability Name="userAccountInformation"/>
 
   </Capabilities>
 </Package>

@@ -28,5 +28,19 @@ static void EnsureBaseq3Folder()
 int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     EnsureBaseq3Folder();
+
+    // Write default player name on first boot (no q3config.cfg yet).
+    try {
+        auto local = winrt::Windows::Storage::ApplicationData::Current().LocalFolder();
+        auto localStr = winrt::to_string(local.Path());
+        FILE* q3cfg = nullptr; fopen_s(&q3cfg, (localStr + "\\baseq3\\q3config.cfg").c_str(), "r");
+        if (!q3cfg) {
+            FILE* f = nullptr; fopen_s(&f, (localStr + "\\baseq3\\uwp_defaults.cfg").c_str(), "w");
+            if (f) { fprintf(f, "set name \"Q3Xbox\"\n"); fclose(f); }
+        } else {
+            fclose(q3cfg);
+        }
+    } catch (...) {}
+
     return SDL_WinRTRunApp(SDL_main, NULL);
 }
