@@ -16,10 +16,10 @@
 # ----------------------------------------------------------------------------
 .claude/
 CLAUDE.md
-AGENTS.md
 memory/
 MEMORY.md
 *.claude.md
+# AGENTS.md is intentionally tracked — it's the public project hand-off doc.
 
 # ----------------------------------------------------------------------------
 # Quake III Arena retail data (NOT redistributable — user supplies their own)
